@@ -5,8 +5,11 @@ import {
 	deleteMediaFromCloudinary,
 	uploadMedia,
 } from "../utils/cloudinary.js";
-import { catchAsync } from "../middleware/error.middleware.js";
-import { AppError } from "../middleware/error.middleware.js";
+import {
+	ApiError,
+	catchAsync,
+} from "../middleware/error.middleware.js";
+import { sendResponse } from "../utils/responsehandler.js";
 
 /**
  * Create a new course
@@ -15,6 +18,44 @@ import { AppError } from "../middleware/error.middleware.js";
 export const createNewCourse = catchAsync(
 	async (req, res) => {
 		// TODO: Implement create new course functionality
+
+		const {
+			title,
+			subtitle,
+			description,
+			category,
+			level,
+			price,
+		} = req.body;
+		const uploadData = {
+			title,
+			subtitle,
+			description,
+			category,
+			level,
+			price,
+		};
+		if (req.file) {
+			const thumbnailr = await uploadMedia(req.file.path);
+			uploadData.thumbnail = thumbnailr.secure_url;
+		}
+
+		const course = await Course.create(uploadData);
+
+		if (!course) {
+			throw new ApiError(
+				"some Error while Creating Course ",
+				500
+			);
+		}
+
+		sendResponse(
+			res,
+			201,
+			true,
+			"Course Created Successfully",
+			course
+		);
 	}
 );
 

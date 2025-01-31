@@ -11,7 +11,9 @@ export const validate = (validations) => {
 	return async (req, res, next) => {
 		//run all validation
 		// this runs 0and store the result in validationResult
-		await Promise.all(validations.map(validation.run(req)));
+		await Promise.all(
+			validations.map((validation) => validation.run(req))
+		);
 
 		const errors = validationResult(req);
 

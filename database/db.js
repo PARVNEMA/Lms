@@ -52,7 +52,7 @@ class DatabaseConnection {
 				mongoose.set("debug", true);
 			}
 
-			await mongoose.conntect(
+			await mongoose.connect(
 				process.env.MONGO_URI,
 				connectionOptions
 			);
@@ -112,16 +112,16 @@ class DatabaseConnection {
 	getConnectionStatus() {
 		return {
 			isConnected: this.isConnected,
-			readyStata: mongoose.connection.readyState,
-			ame: mongoose.connection.name,
+			readyState: mongoose.connection.readyState,
+			name: mongoose.connection.name,
 		};
 	}
 }
 
 // todo create a singleton instance
 
-const dbConntection = new DatabaseConnection();
+const dbConnection = new DatabaseConnection();
 
-export default dbConntection.connect.bind(dbConntection);
+export default dbConnection.connect.bind(dbConnection);
 export const getDBStatus =
-	dbConntection.getConnectionStatus.bind(dbConntection);
+	dbConnection.getConnectionStatus.bind(dbConnection);

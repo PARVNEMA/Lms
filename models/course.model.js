@@ -37,7 +37,7 @@ const courseSchema = new mongoose.Schema(
 			enum: {
 				values: ["begginer", "intermediate", "advance"],
 				message:
-					"level must be begginer,intermediate or advance",
+					"level must be begginer intermediate or advance",
 			},
 			default: "begginer",
 		},

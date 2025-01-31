@@ -1,7 +1,9 @@
-import { CourseProgress } from "../models/courseProgress.js";
+import { CourseProgress } from "../models/course.progress.js";
 import { Course } from "../models/course.model.js";
-import { catchAsync } from "../middleware/error.middleware.js";
-import { AppError } from "../middleware/error.middleware.js";
+import {
+	ApiError,
+	catchAsync,
+} from "../middleware/error.middleware.js";
 
 /**
  * Get user's progress for a specific course

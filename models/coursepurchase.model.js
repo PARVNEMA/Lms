@@ -94,7 +94,7 @@ CoursePurchaseSchema.methods.processRefund =
 		this.refundAmount = amount || this.amount;
 		return this.save();
 	};
-export const coursePurchase = new mongoose.model(
-	"coursePurchase",
+export const CoursePurchase = new mongoose.model(
+	"CoursePurchase",
 	CoursePurchaseSchema
 );

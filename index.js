@@ -14,8 +14,9 @@ import courseRoute from "./routes/course.route.js";
 import mediaRoute from "./routes/media.route.js";
 import purchaseRoute from "./routes/purchaseCourse.route.js";
 import courseProgressRoute from "./routes/courseProgress.route.js";
-import razorpayRoute from "./routes/razorpay.routes.js";
-import healthRoute from "./routes/health.routes.js";
+import razorpayRoute from "./routes/razorpay.route.js";
+import healthRoute from "./routes/health.route.js";
+import connectDB, { getDBStatus } from "./database/db.js";
 dotenv.config();
 
 const app = express();
@@ -26,11 +27,17 @@ const PORT = process.env.PORT || 3000;
 
 // todo Express-Rate-Limiter
 // ? it is used to limit the number of requests that can be made to a server.
-
+connectDB();
 const limiter = rateLimit({
 	windowMs: 15 * 60 * 1000, // 15 minutes
 	limit: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes).
 });
+app.get("/api/v1/db-status", (req, res) => {
+	const status = getDBStatus();
+	console.log("db status is", status);
+	res.status(200).json(status);
+});
+
 app.use(helmet());
 app.use("/api", limiter);
 app.use(express.json({ limit: "10kb" }));
@@ -38,11 +45,16 @@ app.use(
 	express.urlencoded({ extended: true, limit: "10kb" })
 );
 app.use(hpp());
-app.use(
-	MongoSanitize({
-		replaceWith: "_", // Replace illegal characters with underscores
-	})
-);
+// app.use((req, res, next) => {
+// 	req.query = { ...req.query }; // Create a shallow copy of req.query
+// 	next();
+// });
+// app.use(
+// 	MongoSanitize({
+// 		replaceWith: "_", // Replace illegal characters with underscores
+// 		allowDots: true,
+// 	})
+// );
 
 // todo Morgan
 // ? see definition.txt file here.
