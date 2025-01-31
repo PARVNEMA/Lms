@@ -8,8 +8,14 @@ import hpp from "hpp";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import MongoSanitize from "express-mongo-sanitize";
-import healthRouter from "./routes/health.route.js";
+
 import userRoute from "./routes/user.route.js";
+import courseRoute from "./routes/course.route.js";
+import mediaRoute from "./routes/media.route.js";
+import purchaseRoute from "./routes/purchaseCourse.route.js";
+import courseProgressRoute from "./routes/courseProgress.route.js";
+import razorpayRoute from "./routes/razorpay.routes.js";
+import healthRoute from "./routes/health.routes.js";
 dotenv.config();
 
 const app = express();
@@ -93,8 +99,13 @@ app.use(
 
 // todo api routes
 // localhost:8000/api/v1/user
-app.use("/health", healthRouter);
+app.use("/api/v1/media", mediaRoute);
 app.use("/api/v1/user", userRoute);
+app.use("/api/v1/course", courseRoute);
+app.use("/api/v1/purchase", purchaseRoute);
+app.use("/api/v1/progress", courseProgressRoute);
+app.use("/api/v1/razorpay", razorpayRoute);
+app.use("/health", healthRoute);
 
 // ? it should be at the bottom as it always accept teh request and never go to the controllers
 // * 404 handler
