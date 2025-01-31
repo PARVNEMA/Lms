@@ -1,0 +1,193 @@
+TODO MORGAN
+
+?Morgan is a popular Node.js middleware used for logging HTTP requests in web applications. It helps developers monitor the requests coming into their server by logging details like the request method (GET, POST), the status code, the URL, and the time it took to process the request.
+
+ * In simple terms, it’s like a helpful assistant that keeps track of all the incoming traffic to your server and writes down what happened.
+
+### How to use Morgan in a Node.js app:
+1. *Install Morgan**: First, you need to install it via npm.
+
+   ```
+   npm install morgan
+   ```
+
+2. **Use it in your app**: Once installed, you can use it in your app to log requests.
+
+   Here’s an example:
+
+   ```javascript
+   const express = require('express');
+   const morgan = require('morgan');
+
+   const app = express();
+
+   // Use Morgan middleware to log requests
+   app.use(morgan('dev')); // 'dev' is a predefined format for logging
+
+   app.get('/', (req, res) => {
+     res.send('Hello World');
+   });
+
+   app.listen(3000, () => {
+     console.log('Server is running on port 3000');
+   });
+   ```
+
+### Explanation of the example:
+- We installed and required Morgan.
+- We told Express to use Morgan as middleware (`app.use(morgan('dev'))`).
+- The `dev` format logs things like:
+  ```
+  GET / 200 7ms
+  ```
+  This means:
+  - **GET**: The HTTP method
+  - **/**: The requested URL
+  - **200**: The status code (200 means success)
+  - **7ms**: The time it took to process the request
+
+### Other Formats:
+Morgan has different logging formats you can use, like:
+- **'combined'**: Logs more detailed information (including the client IP, user-agent, etc.)
+- **'tiny'**: Logs just the basic info like the HTTP method and URL.
+
+So, it’s really useful for debugging and seeing what’s happening with your web server!
+
+
+TODO Virtuals
+
+?virtuals are the fields on the database that donot exists they are dervied from other fields
+?ex: calculating age from DateOfBirth
+
+we need to write this below timestamps true to avoid error
+toJSON: { virtuals: true },
+toObject: { virtuals: true }
+
+
+Todo ValidateBeforeSave
+
+?The code:
+
+```javascript
+this.lastAccessed = Date.now();
+return this.save({ validateBeforeSave: false });
+```
+
+**Explanation**:
+1. **`this.lastAccessed = Date.now();`**:
+   - Updates the `lastAccessed` property of the current object (typically a database document) with the current timestamp. This is often used to track when the document was last accessed or modified.
+
+2. **`return this.save({ validateBeforeSave: false });`**:
+   - Saves the updated document to the database.
+   - `validateBeforeSave: false` is used to **skip validations** defined in the schema.
+     This can be useful if:
+     - You’re only updating a minor field (like `lastAccessed`) and don’t want to validate unrelated fields.
+     - Skipping validations improves performance for this specific operation.
+
+**In summary**:
+The line ensures that only the `lastAccessed` field is updated in the database without running additional schema validations, making the operation faster and more efficient.
+
+
+todo Indexing in mongoose
+
+In **Mongoose**, indexing helps improve the speed of database queries by organizing data in a way that makes it easier to search, sort, or filter.
+
+Here's what each index does in your example:
+
+1. **`CoursePurchaseSchema.index({ user: 1, course: 1 });`**
+   - This creates a **compound index** for the `user` and `course` fields.
+   - It allows the database to quickly find all purchases of a specific course by a specific user.
+   - For example, if you frequently query like this:
+     ```javascript
+     CoursePurchase.find({ user: userId, course: courseId });
+     ```
+     This index will make those queries faster.
+
+2. **`CoursePurchaseSchema.index({ status: 1 });`**
+   - This creates an index for the `status` field.
+   - It speeds up queries that filter by `status`, such as:
+     ```javascript
+     CoursePurchase.find({ status: "completed" });
+     ```
+
+3. **`CoursePurchaseSchema.index({ createdAt: -1 });`**
+   - This creates an index for the `createdAt` field, sorting in **descending order** (latest first).
+   - It's useful when retrieving the most recent purchases or displaying records in reverse chronological order, such as:
+     ```javascript
+     CoursePurchase.find().sort({ createdAt: -1 });
+     ```
+
+### Why Use Indexing?
+Without indexing, the database has to scan every document to find matches, which is **slow for large datasets**. Indexing creates a sorted structure in the database, making lookups, sorting, and filtering much faster.
+
+### Important Notes:
+- Indexing improves **read performance** but slightly increases **write costs** (e.g., during inserts and updates).
+- Use indexing strategically for fields that are commonly used in queries, sorting, or filtering. Over-indexing can waste memory.
+
+If you're unsure, you can analyze the query performance using the `.explain()` method in MongoDB.
+
+
+
+todo async function wrapper
+
+This function, `catchAsync`, is a **higher-order function** used to handle errors in **asynchronous operations** in Express.js applications.
+
+### Explanation:
+
+- **Purpose**: It simplifies the error handling in asynchronous route handlers by automatically passing errors to the `next()` function in Express. This ensures that you don't need to write `try...catch` in every route handler.
+
+### How It Works:
+
+1. **Input**:
+   - You pass your asynchronous route handler function (`fn`) to `catchAsync`.
+
+2. **Output**:
+   - It returns a new function that Express will use as the route handler.
+
+3. **What It Does**:
+   - When the route handler (`fn`) is executed and an error occurs, the `.catch(next)` ensures that the error is caught and passed to Express's built-in error-handling middleware via `next()`.
+
+### Breaking Down the Code:
+```javascript
+export const catchAsync = (fn) => {
+  return (req, res, next) => {
+    fn(req, res, next).catch(next);
+  };
+};
+```
+
+- **`fn`**: The asynchronous route handler you pass in.
+- **Returned Function**:
+  - This is a wrapper function that Express calls.
+  - It executes `fn(req, res, next)`, which is your original async function.
+  - If `fn` throws an error (e.g., a rejected Promise), `.catch(next)` catches it and forwards the error to the `next` function.
+
+### Why It's Useful:
+- In an asynchronous function like this:
+  ```javascript
+  app.get('/example', async (req, res) => {
+    const data = await someAsyncOperation();
+    res.send(data);
+  });
+  ```
+  You would need a `try...catch` to handle errors:
+  ```javascript
+  app.get('/example', async (req, res, next) => {
+    try {
+      const data = await someAsyncOperation();
+      res.send(data);
+    } catch (err) {
+      next(err); // Pass error to Express's error handler
+    }
+  });
+  ```
+
+- With `catchAsync`, you simply write:
+  ```javascript
+  app.get('/example', catchAsync(async (req, res) => {
+    const data = await someAsyncOperation();
+    res.send(data);
+  }));
+  ```
+
+It reduces repetitive code and ensures all errors are properly handled.

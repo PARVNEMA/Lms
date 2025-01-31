@@ -1,0 +1,36 @@
+{
+	"name": "server",
+	"version": "1.0.0",
+	"description": "lms application with payment gateway integration backend part this is",
+	"main": "index.js",
+	"type": "module",
+	"scripts": {
+		"dev": "nodemon index.js",
+		"start": "node index.js"
+	},
+	"keywords": [
+		"lms"
+	],
+	"author": "naman nema",
+	"license": "ISC",
+	"dependencies": {
+		"bcryptjs": "^2.4.3",
+		"cloudinary": "^2.5.1",
+		"cookie-parser": "^1.4.7",
+		"cors": "^2.8.5",
+		"dotenv": "^16.4.7",
+		"express": "^5.0.1",
+		"express-mongo-sanitize": "^2.2.0",
+		"express-rate-limit": "^7.5.0",
+		"express-validator": "^7.2.1",
+		"helmet": "^8.0.0",
+		"hpp": "^0.2.3",
+		"jsonwebtoken": "^9.0.2",
+		"mongoose": "^8.9.5",
+		"morgan": "^1.10.0",
+		"multer": "^1.4.5-lts.1",
+		"nodemon": "^3.1.9",
+		"razorpay": "^2.9.5",
+		"server": "file:"
+	}
+}
