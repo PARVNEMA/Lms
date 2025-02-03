@@ -129,7 +129,7 @@ userSchema.virtual("totalenrolledcourses").get(function () {
 
 userSchema.methods.updateLastActive = function () {
 	this.lastActive = Date.now();
-	return this.lastActive({ validateBeforeSave: false });
+	return this.save({ validateBeforeSave: false });
 };
 
 export const User = mongoose.model("User", userSchema);

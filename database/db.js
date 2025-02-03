@@ -21,7 +21,7 @@ class DatabaseConnection {
 			this.isConnected = false;
 		});
 		mongoose.connection.on("disconnected", () => {
-			console.log("mongodb connected disconnected");
+			console.log("mongodb connection disconnected");
 			this.handleDisconnection();
 		});
 

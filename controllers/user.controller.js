@@ -90,7 +90,7 @@ export const getCurrentUserProfile = catchAsync(
 		res.status(200).json({
 			success: true,
 			data: {
-				...user.toJSON,
+				user,
 				totalenrolledcourses: user.totalenrolledcourses,
 			},
 		});
@@ -104,16 +104,19 @@ export const updateUserProfile = catchAsync(
 			email: email?.toLowerCase(),
 			bio,
 		};
+		console.log("req.file", req.file);
 		if (req.file) {
 			const avatarResult = await uploadMedia(req.file.path);
+			// console.log("avatar result", avatarResult);
 			updateData.avatar = avatarResult.secure_url;
 
 			//delete old avatar
 			const user = await User.findById(req.id);
 			if (
 				user.avatar &&
-				user.avatar !== 'default-avatar.png"'
+				user.avatar !== "default-avatar.png"
 			) {
+				console.log("deleting media from cloudinary");
 				await deleteMediaFromCloudinary(user.avatar);
 			}
 		}
