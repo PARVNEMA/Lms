@@ -17,45 +17,61 @@ import { sendResponse } from "../utils/responsehandler.js";
  */
 export const createNewCourse = catchAsync(
 	async (req, res) => {
-		// TODO: Implement create new course functionality
+		try {
+			console.log("Decoded User:", req.user);
 
-		const {
-			title,
-			subtitle,
-			description,
-			category,
-			level,
-			price,
-		} = req.body;
-		const uploadData = {
-			title,
-			subtitle,
-			description,
-			category,
-			level,
-			price,
-		};
-		if (req.file) {
-			const thumbnailr = await uploadMedia(req.file.path);
-			uploadData.thumbnail = thumbnailr.secure_url;
+			const {
+				title,
+				subtitle,
+				description,
+				category,
+				level,
+				price,
+			} = req.body;
+
+			console.log("Received request body:", req.body);
+			console.log("Received file:", req.file);
+
+			let thumbnail;
+			if (req.file) {
+				const result = await uploadMedia(req.file.path);
+				thumbnail = result?.secure_url || req.file.path;
+			} else {
+				throw new ApiError(
+					"Course thumbnail is required",
+					400
+				);
+			}
+
+			console.log("Saving course to database...");
+			const course = await Course.create({
+				title: "fvdvf",
+				subtitle: "fdff",
+				description: "rr",
+				category: "web development",
+				level: "begginer",
+				price: 0,
+				instructor: "67a068713712f6c1c1d53637",
+				thumbnail: "xyz",
+			});
+			console.log("Course created:", course);
+
+			if (!course) {
+				throw new ApiError(
+					"Some error while creating course",
+					500
+				);
+			}
+
+			console.log("Sending response...");
+			res.status(201).json({
+				success: true,
+				message: "Course created successfully",
+				data: course,
+			});
+		} catch (error) {
+			console.log("error in course creation", error);
 		}
-
-		const course = await Course.create(uploadData);
-
-		if (!course) {
-			throw new ApiError(
-				"some Error while Creating Course ",
-				500
-			);
-		}
-
-		sendResponse(
-			res,
-			201,
-			true,
-			"Course Created Successfully",
-			course
-		);
 	}
 );
 

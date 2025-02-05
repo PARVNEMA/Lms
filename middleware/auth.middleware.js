@@ -3,6 +3,7 @@ import {
 	ApiError,
 	catchAsync,
 } from "./error.middleware.js";
+import { ResultWithContextImpl } from "express-validator/lib/chain/context-runner-impl.js";
 
 export const isAuthenticated = catchAsync(
 	async (req, res, next) => {
@@ -18,8 +19,8 @@ export const isAuthenticated = catchAsync(
 				process.env.SECRET_KEY
 			);
 			// ? adding addtional properties to request that we are extracting from the token
-			req.id = decodedToken.userId;
-
+			req._id = decodedToken.userId;
+			req.role = decodedToken.role;
 			next();
 		} catch (error) {
 			throw new ApiError("jWT token error", 401);
@@ -30,12 +31,15 @@ export const isAuthenticated = catchAsync(
 export const restrictTo = (...roles) => {
 	return catchAsync(async (req, res, next) => {
 		// roles is an array ['admin', 'instructor']
-		if (!roles.includes(req.user.role)) {
+		console.log("user role =", req.role);
+		// console.log("user user =", req.user);
+		if (!roles.includes(req.role)) {
 			throw new ApiError(
 				"You do not have permission to perform this action",
 				403
 			);
 		}
+
 		next();
 	});
 };
@@ -51,6 +55,7 @@ export const optionalAuth = catchAsync(
 					process.env.JWT_SECRET
 				);
 				req.id = decoded.userId;
+				req.role = decoded.role;
 			}
 			next();
 		} catch (error) {
