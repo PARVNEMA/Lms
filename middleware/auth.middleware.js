@@ -3,7 +3,8 @@ import {
 	ApiError,
 	catchAsync,
 } from "./error.middleware.js";
-import { ResultWithContextImpl } from "express-validator/lib/chain/context-runner-impl.js";
+
+import { User } from "../models/user.model.js";
 
 export const isAuthenticated = catchAsync(
 	async (req, res, next) => {
@@ -16,14 +17,31 @@ export const isAuthenticated = catchAsync(
 		try {
 			const decodedToken = await jwt.verify(
 				token,
-				process.env.SECRET_KEY
+				process.env.JWT_SECRET
 			);
 			// ? adding addtional properties to request that we are extracting from the token
-			req._id = decodedToken.userId;
-			req.role = decodedToken.role;
+			req.id = decodedToken.userId;
+
+			const user = await User.findById(req.id);
+			if (!user) {
+				throw new ApiError("user not found", 404);
+			}
+			req.user = user;
 			next();
 		} catch (error) {
-			throw new ApiError("jWT token error", 401);
+			if (error.name === "JsonWebTokenError") {
+				throw new ApiError(
+					"Invalid token. Please log in again.",
+					401
+				);
+			}
+			if (error.name === "TokenExpiredError") {
+				throw new AppError(
+					"Your token has expired. Please log in again.",
+					401
+				);
+			}
+			throw error;
 		}
 	}
 );
@@ -31,15 +49,12 @@ export const isAuthenticated = catchAsync(
 export const restrictTo = (...roles) => {
 	return catchAsync(async (req, res, next) => {
 		// roles is an array ['admin', 'instructor']
-		console.log("user role =", req.role);
-		// console.log("user user =", req.user);
-		if (!roles.includes(req.role)) {
-			throw new ApiError(
+		if (!roles.includes(req.user.role)) {
+			throw new AppError(
 				"You do not have permission to perform this action",
 				403
 			);
 		}
-
 		next();
 	});
 };

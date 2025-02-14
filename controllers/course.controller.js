@@ -17,61 +17,49 @@ import { sendResponse } from "../utils/responsehandler.js";
  */
 export const createNewCourse = catchAsync(
 	async (req, res) => {
-		try {
-			console.log("Decoded User:", req.user);
+		const {
+			title,
+			subtitle,
+			description,
+			category,
+			level,
+			price,
+		} = req.body;
 
-			const {
-				title,
-				subtitle,
-				description,
-				category,
-				level,
-				price,
-			} = req.body;
-
-			console.log("Received request body:", req.body);
-			console.log("Received file:", req.file);
-
-			let thumbnail;
-			if (req.file) {
-				const result = await uploadMedia(req.file.path);
-				thumbnail = result?.secure_url || req.file.path;
-			} else {
-				throw new ApiError(
-					"Course thumbnail is required",
-					400
-				);
-			}
-
-			console.log("Saving course to database...");
-			const course = await Course.create({
-				title: "fvdvf",
-				subtitle: "fdff",
-				description: "rr",
-				category: "web development",
-				level: "begginer",
-				price: 0,
-				instructor: "67a068713712f6c1c1d53637",
-				thumbnail: "xyz",
-			});
-			console.log("Course created:", course);
-
-			if (!course) {
-				throw new ApiError(
-					"Some error while creating course",
-					500
-				);
-			}
-
-			console.log("Sending response...");
-			res.status(201).json({
-				success: true,
-				message: "Course created successfully",
-				data: course,
-			});
-		} catch (error) {
-			console.log("error in course creation", error);
+		// Handle thumbnail upload
+		let thumbnail;
+		if (req.file) {
+			const result = await uploadMedia(req.file.path);
+			thumbnail = result?.secure_url || req.file.path;
+		} else {
+			throw new ApiError(
+				"Course thumbnail is required",
+				400
+			);
 		}
+
+		// Create course
+		const course = await Course.create({
+			title,
+			subtitle,
+			description,
+			category,
+			level,
+			price,
+			thumbnail,
+			instructor: req.id,
+		});
+
+		// Add course to instructor's created courses
+		await User.findByIdAndUpdate(req.id, {
+			$push: { createdCourses: course._id },
+		});
+
+		res.status(201).json({
+			success: true,
+			message: "Course created successfully",
+			data: course,
+		});
 	}
 );
 
@@ -81,7 +69,53 @@ export const createNewCourse = catchAsync(
  */
 export const searchCourses = catchAsync(
 	async (req, res) => {
-		// TODO: Implement search courses functionality
+		try {
+			const { term } = req.query;
+			console.log("query=", term);
+
+			if (!term) {
+				return sendResponse(
+					res,
+					400,
+					false,
+					"Search term is required"
+				);
+			}
+
+			// Search using regex (case-insensitive, partial match)
+			const courses = await Course.find({
+				$or: [
+					{ title: { $regex: term, $options: "i" } },
+					{ description: { $regex: term, $options: "i" } },
+					{ tags: { $in: [new RegExp(term, "i")] } },
+				],
+			}).limit(10); // Apply a limit for performance
+
+			if (!courses.length) {
+				return sendResponse(
+					res,
+					404,
+					false,
+					"No courses found"
+				);
+			}
+
+			sendResponse(
+				res,
+				200,
+				true,
+				"Courses found successfully",
+				courses
+			);
+		} catch (error) {
+			console.error("Error searching courses:", error);
+			sendResponse(
+				res,
+				500,
+				false,
+				"Internal Server Error"
+			);
+		}
 	}
 );
 
@@ -92,6 +126,26 @@ export const searchCourses = catchAsync(
 export const getPublishedCourses = catchAsync(
 	async (req, res) => {
 		// TODO: Implement get published courses functionality
+
+		const allCourses = await Course.find({
+			isPublished: true,
+		});
+		if (!allCourses) {
+			sendResponse(
+				res,
+				404,
+				true,
+				"no Published Course Found"
+			);
+		}
+
+		sendResponse(
+			res,
+			200,
+			true,
+			"Course Found",
+			allCourses
+		);
 	}
 );
 
@@ -102,6 +156,22 @@ export const getPublishedCourses = catchAsync(
 export const getMyCreatedCourses = catchAsync(
 	async (req, res) => {
 		// TODO: Implement get my created courses functionality
+		const myCreatedCourse = await Course.find({
+			instructor: req.id,
+		});
+
+		if (!myCreatedCourse) {
+			return res.status(404).json({
+				success: false,
+				message: "no Published Course Found",
+			});
+		}
+
+		return res.status(200).json({
+			success: true,
+			message: "all Published courses Found",
+			data: myCreatedCourse,
+		});
 	}
 );
 

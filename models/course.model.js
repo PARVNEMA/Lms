@@ -1,4 +1,4 @@
-import mongoose, { mongo } from "mongoose";
+import mongoose from "mongoose";
 
 const courseSchema = new mongoose.Schema(
 	{
@@ -35,7 +35,7 @@ const courseSchema = new mongoose.Schema(
 		level: {
 			type: String,
 			enum: {
-				values: ["begginer", "intermediate", "advance"],
+				values: ["beginner", "intermediate", "advanced"],
 				message:
 					"level must be begginer intermediate or advance",
 			},
@@ -95,6 +95,7 @@ courseSchema.pre("save", function (next) {
 	if (this.lecture) {
 		return (this.totalLectures = this.lectures.length);
 	}
+	next();
 });
 
 export const Course = mongoose.model(
