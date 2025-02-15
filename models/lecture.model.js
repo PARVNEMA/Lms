@@ -38,7 +38,7 @@ const lectureSchema = new mongoose.Schema(
 
 		isPreview: {
 			type: Boolean,
-			default: false,
+			default: true,
 		},
 		order: {
 			type: Number,
@@ -56,6 +56,7 @@ lectureSchema.pre("save", function (next) {
 	if (this.duration) {
 		this.duration = Math.round(this.duration * 100) / 100; // optional thing of roundingoff lecture
 	}
+	next();
 });
 
 export const Lecture = mongoose.model(

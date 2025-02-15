@@ -1,8 +1,10 @@
 import { Course } from "../models/course.model.js";
 import { Lecture } from "../models/lecture.model.js";
 import { User } from "../models/user.model.js";
+import { extractPublicId } from "cloudinary-build-url";
 import {
 	deleteMediaFromCloudinary,
+	deleteVideoFromCloudinary,
 	uploadMedia,
 } from "../utils/cloudinary.js";
 import {
@@ -182,16 +184,77 @@ export const getMyCreatedCourses = catchAsync(
 export const updateCourseDetails = catchAsync(
 	async (req, res) => {
 		// TODO: Implement update course details functionality
+		const {
+			title,
+			subtitle,
+			description,
+			category,
+			level,
+			price,
+		} = req.body;
+		const { courseId } = req.params;
+		let thumbnail;
+		if (req.file) {
+			const result = await uploadMedia(req.file.path);
+			thumbnail = result?.secure_url || req.file.path;
+		} else {
+			throw new ApiError(
+				"Course thumbnail is required",
+				400
+			);
+		}
+
+		const updatedCourse = await Course.findByIdAndUpdate(
+			courseId,
+			{
+				title,
+				subtitle,
+				description,
+				category,
+				level,
+				price,
+				thumbnail,
+			}
+		);
+		if (!updatedCourse) {
+			throw new ApiError(
+				500,
+				"failed to update course details"
+			);
+		}
+
+		return sendResponse(
+			res,
+			200,
+			true,
+			"course updated successfully",
+			updatedCourse
+		);
 	}
 );
 
 /**
  * Get course by ID
- * @route GET /api/v1/courses/:courseId
+ * @route GET /api/v1/courses/c/:courseId
  */
 export const getCourseDetails = catchAsync(
 	async (req, res) => {
 		// TODO: Implement get course details functionality
+		const { courseId } = req.params;
+
+		const course = await Course.findById(courseId);
+
+		if (!course) {
+			throw new ApiError(404, "course not found");
+		}
+
+		return sendResponse(
+			res,
+			200,
+			true,
+			"course found successfully",
+			course
+		);
 	}
 );
 
@@ -202,6 +265,57 @@ export const getCourseDetails = catchAsync(
 export const addLectureToCourse = catchAsync(
 	async (req, res) => {
 		// TODO: Implement add lecture to course functionality
+
+		const { title, description, order } = req.body;
+		const { courseId } = req.params;
+
+		let video;
+		if (req.file) {
+			const result = await uploadMedia(req.file.path);
+			video = result?.secure_url || req.file.path;
+		} else {
+			throw new ApiError(
+				"Course Video is required || failed to Upload video",
+				400
+			);
+		}
+
+		console.log("video from cloudinary=", video);
+		const publicId = extractPublicId(video);
+		console.log("publicId=", publicId);
+		const lecture = await Lecture.create({
+			title,
+			description,
+			order,
+			videoUrl: video,
+			publicId,
+		});
+
+		if (!lecture) {
+			deleteVideoFromCloudinary(video.publicId);
+			throw new ApiError(500, "failed to upload lecture");
+		}
+
+		const updatedCourse = await Course.findByIdAndUpdate(
+			courseId,
+			{ $push: { lectures: lecture._id } },
+			{ new: true }
+		);
+
+		if (!updatedCourse) {
+			throw new ApiError(
+				500,
+				"failed to add lecture to course"
+			);
+		}
+
+		return sendResponse(
+			res,
+			200,
+			true,
+			"course updated succesfully",
+			updatedCourse
+		);
 	}
 );
 
@@ -212,5 +326,23 @@ export const addLectureToCourse = catchAsync(
 export const getCourseLectures = catchAsync(
 	async (req, res) => {
 		// TODO: Implement get course lectures functionality
+
+		const { courseId } = req.params;
+
+		const courseLectures = await Course.findById(
+			courseId
+		).populate("lectures");
+
+		if (!courseLectures) {
+			throw new ApiError(404, "courses lectures not found");
+		}
+
+		return sendResponse(
+			res,
+			200,
+			true,
+			"all Lectures found",
+			courseLectures.lectures
+		);
 	}
 );
