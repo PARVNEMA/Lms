@@ -193,8 +193,24 @@ export const updateCourseDetails = catchAsync(
 			price,
 		} = req.body;
 		const { courseId } = req.params;
+
+		const course = await Course.findById(courseId);
+		if (!course) {
+			throw new ApiError("Course not found", 404);
+		}
+
+		// Verify ownership
+		if (course.instructor.toString() !== req.id) {
+			throw new ApiError(
+				"Not authorized to update this course",
+				403
+			);
+		}
 		let thumbnail;
 		if (req.file) {
+			if (course.thumbnail) {
+				await deleteMediaFromCloudinary(course.thumbnail);
+			}
 			const result = await uploadMedia(req.file.path);
 			thumbnail = result?.secure_url || req.file.path;
 		} else {
@@ -214,7 +230,8 @@ export const updateCourseDetails = catchAsync(
 				level,
 				price,
 				thumbnail,
-			}
+			},
+			{ new: true, runValidators: true }
 		);
 		if (!updatedCourse) {
 			throw new ApiError(
@@ -266,12 +283,23 @@ export const addLectureToCourse = catchAsync(
 	async (req, res) => {
 		// TODO: Implement add lecture to course functionality
 
-		const { title, description, order } = req.body;
+		const { title, description } = req.body;
 		const { courseId } = req.params;
 
+		const course = await Course.findById(courseId);
+		if (!course) {
+			throw new ApiError("Course not found", 404);
+		}
+		if (course.instructor.toString() !== req.id) {
+			throw new ApiError(
+				"Not authorized to update this course",
+				403
+			);
+		}
 		let video;
+		let result;
 		if (req.file) {
-			const result = await uploadMedia(req.file.path);
+			result = await uploadMedia(req.file.path);
 			video = result?.secure_url || req.file.path;
 		} else {
 			throw new ApiError(
@@ -281,14 +309,15 @@ export const addLectureToCourse = catchAsync(
 		}
 
 		console.log("video from cloudinary=", video);
-		const publicId = extractPublicId(video);
-		console.log("publicId=", publicId);
+		// const publicId = extractPublicId(video);
+		// console.log("publicId=", publicId);
 		const lecture = await Lecture.create({
 			title,
 			description,
-			order,
+			order: course.lectures.length + 1,
 			videoUrl: video,
-			publicId,
+			duration: result?.duration || 0,
+			publicId: result?.public_id || req.file.path,
 		});
 
 		if (!lecture) {
