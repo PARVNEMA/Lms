@@ -48,7 +48,6 @@ const CoursePurchaseSchema = new mongoose.Schema(
 		},
 		refundId: {
 			type: String,
-			required: [true, "refundId is required"],
 		},
 		refundAmount: {
 			type: Number,

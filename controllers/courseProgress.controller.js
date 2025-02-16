@@ -4,6 +4,7 @@ import {
 	ApiError,
 	catchAsync,
 } from "../middleware/error.middleware.js";
+import { sendResponse } from "../utils/responsehandler.js";
 
 /**
  * Get user's progress for a specific course
@@ -12,6 +13,27 @@ import {
 export const getUserCourseProgress = catchAsync(
 	async (req, res) => {
 		// TODO: Implement get user's course progress functionality
+		const { courseId } = req.params;
+		const course = await Course.findById(courseId);
+		if (!course) {
+			throw new ApiError("course not found", 404);
+		}
+
+		const courseProgress = await CourseProgress.findOne({
+			$and: [{ course: courseId }, { user: req.id }],
+		});
+
+		if (!courseProgress) {
+			throw new ApiError("course progress not found", 404);
+		}
+
+		return sendResponse(
+			res,
+			200,
+			true,
+			"course progresss found",
+			courseProgress
+		);
 	}
 );
 
@@ -22,6 +44,7 @@ export const getUserCourseProgress = catchAsync(
 export const updateLectureProgress = catchAsync(
 	async (req, res) => {
 		// TODO: Implement update lecture progress functionality
+		const { courseId, lectureId } = req.params;
 	}
 );
 
@@ -42,5 +65,6 @@ export const markCourseAsCompleted = catchAsync(
 export const resetCourseProgress = catchAsync(
 	async (req, res) => {
 		// TODO: Implement reset course progress functionality
+		const { courseId } = req.params;
 	}
 );

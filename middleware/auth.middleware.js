@@ -8,7 +8,9 @@ import { User } from "../models/user.model.js";
 
 export const isAuthenticated = catchAsync(
 	async (req, res, next) => {
-		const token = req.cookies.token;
+		const token =
+			req.cookies.token ||
+			req.header("Authorization")?.replace("Bearer ", "");
 
 		if (!token) {
 			throw new ApiError("you are not logged in❌❌", 401);

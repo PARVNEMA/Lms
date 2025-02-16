@@ -11,9 +11,16 @@ const razorpay = new Razorpay({
 	key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
+// todo
+// todo Understanding the Razorpay Order & Payment Flow
+// *Backend (Creates Order) → Razorpay returns razorpay_order_id.
+// *Frontend (Uses order_id to open Razorpay checkout page).
+// *User Completes Payment → Razorpay sends razorpay_payment_id and razorpay_signature to frontend.
+// * Frontend Sends Details to Backend (razorpay_order_id, razorpay_payment_id, razorpay_signature).
+// *Backend Verifies Payment using crypto and updates the order status.
 export const createRazorpayOrder = async (req, res) => {
 	try {
-		const userId = req.id;
+		const userId = req.id || "67a068713712f6c1c1d53637";
 		const { courseId } = req.body;
 
 		const course = await Course.findById(courseId);
@@ -28,6 +35,10 @@ export const createRazorpayOrder = async (req, res) => {
 			user: userId,
 			amount: course.price,
 			status: "pending",
+			paymentMethod: "razorpay",
+			currency: "INR",
+			refundId: null,
+			refundAmount: 0,
 		});
 
 		const options = {
@@ -53,6 +64,7 @@ export const createRazorpayOrder = async (req, res) => {
 			course: {
 				name: course.title,
 				desc: course.description,
+				image: course.thumbnail,
 			},
 		});
 	} catch (error) {
