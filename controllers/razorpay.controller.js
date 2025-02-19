@@ -6,6 +6,7 @@ import {
 import { Course } from "../models/course.model.js";
 import { CoursePurchase } from "../models/coursepurchase.model.js";
 import crypto from "crypto";
+import { CourseProgress } from "../models/course.progress.js";
 const razorpay = new Razorpay({
 	key_id: process.env.RAZORPAY_KEY_ID,
 	key_secret: process.env.RAZORPAY_KEY_SECRET,
@@ -111,10 +112,22 @@ export const verifyPayment = async (req, res) => {
 		purchase.status = "completed";
 		await purchase.save();
 
+		let setupCourseProgress = await CourseProgress.findOne({
+			$and: [{ user: req.id, course: purchase.course }],
+		});
+		if (!setupCourseProgress) {
+			setupCourseProgress = await CourseProgress.create({
+				user: req.id,
+				course: purchase.course,
+			});
+		}
+
 		res.status(200).json({
 			success: true,
-			message: "payment verified successfully",
+			message:
+				"payment verified successfully and course added to your profile",
 			courseId: purchase.courseId,
+			CourseProgressSetup: setupCourseProgress,
 		});
 	} catch (error) {
 		console.log(error);

@@ -38,7 +38,7 @@ export const isAuthenticated = catchAsync(
 				);
 			}
 			if (error.name === "TokenExpiredError") {
-				throw new AppError(
+				throw new ApiError(
 					"Your token has expired. Please log in again.",
 					401
 				);
@@ -52,7 +52,7 @@ export const restrictTo = (...roles) => {
 	return catchAsync(async (req, res, next) => {
 		// roles is an array ['admin', 'instructor']
 		if (!roles.includes(req.user.role)) {
-			throw new AppError(
+			throw new ApiError(
 				"You do not have permission to perform this action",
 				403
 			);

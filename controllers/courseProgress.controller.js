@@ -21,19 +21,29 @@ export const getUserCourseProgress = catchAsync(
 
 		const courseProgress = await CourseProgress.findOne({
 			$and: [{ course: courseId }, { user: req.id }],
-		});
+		}).populate("lectureProgress.lecture");
 
 		if (!courseProgress) {
 			throw new ApiError("course progress not found", 404);
 		}
 
-		return sendResponse(
-			res,
-			200,
-			true,
-			"course progresss found",
-			courseProgress
+		const lectures = courseProgress.lectureProgress;
+		const lectureprogress = lectures.filter(
+			(lec) => lec.isCompleted === true
 		);
+
+		const completedLectures = Math.round(
+			(lectureprogress.length / lectures.length) * 100
+		);
+
+		return res.status(200).json({
+			success: true,
+			data: {
+				courseProgress,
+				compltedLectures: completedLectures,
+				getCompletedLectures: lectureprogress,
+			},
+		});
 	}
 );
 
@@ -45,6 +55,52 @@ export const updateLectureProgress = catchAsync(
 	async (req, res) => {
 		// TODO: Implement update lecture progress functionality
 		const { courseId, lectureId } = req.params;
+		const courseProgressExists =
+			await CourseProgress.findOne({
+				$and: [{ course: courseId }, { user: req.id }],
+			});
+		if (!courseProgressExists) {
+			throw new ApiError(400, "course is not purchased");
+		}
+		const lectureIndex =
+			await courseProgressExists.lectureProgress.findIndex(
+				(lectures) =>
+					lectures.lecture.toString() === lectureId
+			);
+
+		if (lectureIndex !== -1) {
+			courseProgressExists.lectureProgress[
+				lectureIndex
+			].isCompleted = true;
+		} else {
+			courseProgressExists.lectureProgress.push({
+				lecture: lectureId,
+				isCompleted: true,
+			});
+		}
+
+		const course = await Course.findById(courseId);
+		const completedlectures =
+			courseProgressExists.lectureProgress.filter(
+				(lec) => lec.isCompleted === true
+			);
+		courseProgressExists.isCompleted =
+			completedlectures.length === course.lectures.length;
+
+		courseProgressExists.completionPercentage =
+			Math.round(
+				completedlectures.length / course.lectures.length
+			) * 100;
+		await courseProgressExists.save();
+
+		return res.status(200).json({
+			success: true,
+			data: {
+				lectureProgress:
+					courseProgressExists.lectureProgress,
+				lecturescompleted: completedlectures.length,
+			},
+		});
 	}
 );
 
@@ -55,6 +111,32 @@ export const updateLectureProgress = catchAsync(
 export const markCourseAsCompleted = catchAsync(
 	async (req, res) => {
 		// TODO: Implement mark course as completed functionality
+		const { courseId } = req.params;
+		const course = await Course.findById(courseId);
+		if (!course) {
+			throw new ApiError("course not found", 404);
+		}
+
+		const courseProgress = await CourseProgress.findOne({
+			$and: [{ course: courseId }, { user: req.id }],
+		}).populate("lectureProgress.lecture");
+
+		if (!courseProgress) {
+			return res.status(200).json({
+				success: true,
+				message: "course progress empty",
+			});
+		}
+
+		courseProgress.isCompleted = true;
+		await courseProgress.save();
+
+		return sendResponse(
+			res,
+			200,
+			true,
+			"Course Marked Complted ✅✅"
+		);
 	}
 );
 
@@ -66,5 +148,30 @@ export const resetCourseProgress = catchAsync(
 	async (req, res) => {
 		// TODO: Implement reset course progress functionality
 		const { courseId } = req.params;
+		const course = await Course.findById(courseId);
+		if (!course) {
+			throw new ApiError("course not found", 404);
+		}
+
+		const courseProgress = await CourseProgress.findOne({
+			$and: [{ course: courseId }, { user: req.id }],
+		}).populate("lectureProgress.lecture");
+
+		if (!courseProgress) {
+			return res.status(200).json({
+				success: true,
+				message: "course progress empty",
+			});
+		}
+		courseProgress.isCompleted = false;
+		courseProgress.lectureProgress = [];
+		await courseProgress.save();
+
+		return sendResponse(
+			res,
+			200,
+			true,
+			"Course progress reset"
+		);
 	}
 );
