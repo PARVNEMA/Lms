@@ -41,7 +41,7 @@ export const getUserCourseProgress = catchAsync(
 			data: {
 				courseProgress,
 				compltedLectures: completedLectures,
-				getCompletedLectures: lectureprogress,
+				// getCompletedLectures: lectureprogress,
 			},
 		});
 	}

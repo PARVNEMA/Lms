@@ -78,10 +78,15 @@ export const SignoutUser = catchAsync(async (_, res) => {
 
 export const getCurrentUserProfile = catchAsync(
 	async (req, res) => {
-		const user = await User.findById(req.id).populate({
-			path: "enrolledCourses.course",
-			select: "title thumbnail description",
-		});
+		const user = await User.findById(req.id)
+			.populate({
+				path: "enrolledCourses.course",
+				select: "title thumbnail description",
+			})
+			.populate({
+				path: "createdCourses",
+				select: "title thumbnail description",
+			});
 
 		if (!user) {
 			throw new ApiError("user not found", 404);
@@ -91,7 +96,7 @@ export const getCurrentUserProfile = catchAsync(
 			success: true,
 			data: {
 				user,
-				totalenrolledcourses: user.totalenrolledcourses,
+				// totalenrolledcourses: user.totalenrolledcourses,
 			},
 		});
 	}
